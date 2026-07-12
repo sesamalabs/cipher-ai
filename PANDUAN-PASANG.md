@@ -3,7 +3,7 @@
 Semua langkah lewat browser, tanpa ngetik kode. Ikuti urut dari atas.
 
 ---
-
+ 
 ## LANGKAH 1 — Supabase (± 5 menit)
 
 1. Buka https://supabase.com/dashboard → klik **New Project**
