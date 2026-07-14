@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabaseAdmin";
 
 // POST /api/signals — dipanggil Claude Code untuk kirim DRAFT sinyal
 // Header wajib: x-api-key: <CIPHER_API_KEY>
+// Field opsional: chart_base64 (screenshot PNG dalam base64) -> diupload ke Supabase Storage
 export async function POST(request) {
   const apiKey = request.headers.get("x-api-key");
   if (!apiKey || apiKey !== process.env.CIPHER_API_KEY) {
@@ -27,10 +28,32 @@ export async function POST(request) {
   }
 
   const supabase = createAdminClient();
+  const symbol = String(body.symbol).toUpperCase().replace("/", "");
+
+  // Upload screenshot setup (opsional)
+  let chartUrl = null;
+  if (body.chart_base64) {
+    try {
+      const buf = Buffer.from(body.chart_base64, "base64");
+      const fileName = Date.now() + "-" + symbol + ".png";
+      const { error: upErr } = await supabase.storage
+        .from("charts")
+        .upload(fileName, buf, { contentType: "image/png" });
+      if (!upErr) {
+        const { data: pub } = supabase.storage
+          .from("charts")
+          .getPublicUrl(fileName);
+        chartUrl = pub?.publicUrl || null;
+      }
+    } catch {
+      // gagal upload screenshot tidak menggagalkan pembuatan sinyal
+    }
+  }
+
   const { data, error } = await supabase
     .from("signals")
     .insert({
-      symbol: String(body.symbol).toUpperCase().replace("/", ""),
+      symbol,
       timeframe: body.timeframe || "4H",
       direction: "long",
       entry: body.entry,
@@ -42,6 +65,7 @@ export async function POST(request) {
       reasoning: body.reasoning || "",
       tags: Array.isArray(body.tags) ? body.tags : [],
       status: "draft",
+      chart_url: chartUrl,
     })
     .select()
     .single();
