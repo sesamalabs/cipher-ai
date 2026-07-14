@@ -13,7 +13,7 @@ const STATUS_LABEL = {
 };
 
 function fmt(n) {
-  if (n === null || n === undefined) return "\u2014";
+  if (n === null || n === undefined) return "—";
   const num = parseFloat(n);
   if (num >= 1000) return num.toLocaleString("en-US", { maximumFractionDigits: 2 });
   if (num >= 1) return num.toFixed(2);
@@ -98,7 +98,7 @@ export default function Dashboard() {
     }
     showToast(
       approve
-        ? "Sinyal " + prettySymbol(signal.symbol) + " disetujui \u2014 mulai dipantau"
+        ? "Sinyal " + prettySymbol(signal.symbol) + " disetujui — mulai dipantau"
         : "Draft " + prettySymbol(signal.symbol) + " ditolak"
     );
     loadData();
@@ -126,14 +126,14 @@ export default function Dashboard() {
           </svg>
           <span>Dashboard</span>
         </a>
-        <div className="nav-footer">Sesama Labs \u00b7 v0.2</div>
+        <div className="nav-footer">Sesama Labs · v0.2</div>
       </aside>
 
       <main className="main">
         <header className="topbar">
           <div>
             <h1>Dashboard</h1>
-            <div className="sub">Bitget spot \u00b7 pemantauan otomatis tiap 5 menit</div>
+            <div className="sub">Bitget spot · pemantauan otomatis tiap 5 menit</div>
           </div>
           <div className="top-right">
             <span className="live">Live</span>
@@ -145,7 +145,7 @@ export default function Dashboard() {
 
         <div className="content">
           {loading ? (
-            <div className="loading">Memuat data\u2026</div>
+            <div className="loading">Memuat data…</div>
           ) : (
             <>
               <section className="stats">
@@ -154,7 +154,7 @@ export default function Dashboard() {
                   <div className="value mono">
                     {stats?.winrate_pct !== null && stats?.winrate_pct !== undefined
                       ? stats.winrate_pct + "%"
-                      : "\u2014"}
+                      : "—"}
                   </div>
                   <div className="delta flat">
                     {stats?.closed_count || 0} trade selesai
@@ -173,7 +173,7 @@ export default function Dashboard() {
                 <div className="stat">
                   <div className="label">Avg RR tercapai</div>
                   <div className="value mono">
-                    {stats?.avg_rr ? "1:" + stats.avg_rr : "\u2014"}
+                    {stats?.avg_rr ? "1:" + stats.avg_rr : "—"}
                   </div>
                   <div className="delta flat">rata-rata trade win</div>
                 </div>
@@ -183,7 +183,7 @@ export default function Dashboard() {
                 <div>
                   <div className="section-head">
                     <h2>Sinyal aktif</h2>
-                    <span className="count">{active.length} posisi \u00b7 klik baris untuk detail</span>
+                    <span className="count">{active.length} posisi · klik baris untuk detail</span>
                   </div>
                   <div className="card table-scroll" style={{ marginBottom: 28 }}>
                     {active.length === 0 ? (
@@ -240,10 +240,10 @@ export default function Dashboard() {
                                           {s.reasoning || "Tanpa reasoning"}
                                         </p>
                                         <p className="detail-meta">
-                                          {rrTp3 ? "RR ke TP3 = 1:" + rrTp3 + " \u00b7 " : ""}
+                                          {rrTp3 ? "RR ke TP3 = 1:" + rrTp3 + " · " : ""}
                                           risiko modal {s.risk_pct}%
                                           {Array.isArray(s.tags) && s.tags.length > 0
-                                            ? " \u00b7 " + s.tags.join(", ")
+                                            ? " · " + s.tags.join(", ")
                                             : ""}
                                         </p>
                                         {s.chart_url ? (
@@ -307,7 +307,7 @@ export default function Dashboard() {
                               <td className="mono">
                                 {s.result === "win" && s.rr_achieved
                                   ? "1:" + s.rr_achieved
-                                  : "\u2014"}
+                                  : "—"}
                               </td>
                             </tr>
                           ))}
@@ -337,7 +337,7 @@ export default function Dashboard() {
                             <div className="confirm-top">
                               <span className="confirm-pair">
                                 {prettySymbol(d.symbol)}{" "}
-                                <span className="tf">\u00b7 {d.timeframe}</span>
+                                <span className="tf">· {d.timeframe}</span>
                               </span>
                               <span className="badge draft">Draft</span>
                             </div>
@@ -375,7 +375,7 @@ export default function Dashboard() {
                               </a>
                             )}
                             <p className="rr-note">
-                              {rrTp3 ? "RR ke TP3 = 1:" + rrTp3 + " \u00b7 " : ""}
+                              {rrTp3 ? "RR ke TP3 = 1:" + rrTp3 + " · " : ""}
                               risiko modal {d.risk_pct}%
                             </p>
                             <div className="actions">
@@ -384,7 +384,7 @@ export default function Dashboard() {
                                 disabled={busy === d.id}
                                 onClick={() => decide(d, true)}
                               >
-                                {busy === d.id ? "\u2026" : "Setujui"}
+                                {busy === d.id ? "…" : "Setujui"}
                               </button>
                               <button
                                 className="btn"
