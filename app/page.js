@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
+import SetupChart from "@/components/SetupChart";
 
 const STATUS_LABEL = {
   active: { text: "Berjalan", cls: "pending" },
@@ -35,6 +36,9 @@ export default function Dashboard() {
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(null);
   const [expanded, setExpanded] = useState(null);
+  const [scanBusy, setScanBusy] = useState(false);
+  const [genBusy, setGenBusy] = useState(null);
+  const [symInput, setSymInput] = useState("");
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
@@ -81,7 +85,7 @@ export default function Dashboard() {
 
   function showToast(msg) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2600);
+    setTimeout(() => setToast(""), 3200);
   }
 
   async function decide(signal, approve) {
@@ -102,6 +106,45 @@ export default function Dashboard() {
         : "Draft " + prettySymbol(signal.symbol) + " ditolak"
     );
     loadData();
+  }
+
+  async function refreshScreener() {
+    setScanBusy(true);
+    try {
+      const res = await fetch("/api/screener/refresh", { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal scan");
+      showToast("Screener diperbarui — " + json.found + " kandidat ditemukan");
+      loadData();
+    } catch (e) {
+      showToast("Scan gagal: " + e.message);
+    }
+    setScanBusy(false);
+  }
+
+  async function generateSetup(symbol) {
+    const sym = String(symbol || "").trim();
+    if (!sym) return;
+    setGenBusy(sym.toUpperCase());
+    try {
+      const res = await fetch("/api/signals/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbol: sym, timeframe: "4H" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal membuat setup");
+      if (json.setup) {
+        showToast("Draft setup dibuat — cek panel konfirmasi");
+        setSymInput("");
+      } else {
+        showToast("AI: " + (json.note || "tidak ada setup layak saat ini"));
+      }
+      loadData();
+    } catch (e) {
+      showToast("Gagal: " + e.message);
+    }
+    setGenBusy(null);
   }
 
   async function logout() {
@@ -126,7 +169,7 @@ export default function Dashboard() {
           </svg>
           <span>Dashboard</span>
         </a>
-        <div className="nav-footer">Sesama Labs · v0.2</div>
+        <div className="nav-footer">Sesama Labs · v0.3</div>
       </aside>
 
       <main className="main">
@@ -245,8 +288,11 @@ export default function Dashboard() {
                                           {Array.isArray(s.tags) && s.tags.length > 0
                                             ? " · " + s.tags.join(", ")
                                             : ""}
+                                          {s.source === "web" ? " · setup dari web (AI)" : ""}
                                         </p>
-                                        {s.chart_url ? (
+                                        {s.ohlcv ? (
+                                          <SetupChart ohlcv={s.ohlcv} levels={s} />
+                                        ) : s.chart_url ? (
                                           <a
                                             href={s.chart_url}
                                             target="_blank"
@@ -260,7 +306,7 @@ export default function Dashboard() {
                                           </a>
                                         ) : (
                                           <p className="detail-meta">
-                                            Belum ada screenshot setup untuk sinyal ini
+                                            Belum ada chart setup untuk sinyal ini
                                           </p>
                                         )}
                                       </div>
@@ -339,7 +385,9 @@ export default function Dashboard() {
                                 {prettySymbol(d.symbol)}{" "}
                                 <span className="tf">· {d.timeframe}</span>
                               </span>
-                              <span className="badge draft">Draft</span>
+                              <span className="badge draft">
+                                {d.source === "web" ? "Draft · AI web" : "Draft"}
+                              </span>
                             </div>
                             <p className="confirm-reason">{d.reasoning}</p>
                             <div className="levels">
@@ -364,7 +412,11 @@ export default function Dashboard() {
                                 <div className="v mono">{fmt(d.tp3)}</div>
                               </div>
                             </div>
-                            {d.chart_url && (
+                            {d.ohlcv ? (
+                              <div style={{ marginBottom: 12 }}>
+                                <SetupChart ohlcv={d.ohlcv} levels={d} />
+                              </div>
+                            ) : d.chart_url ? (
                               <a href={d.chart_url} target="_blank" rel="noreferrer">
                                 <img
                                   className="chart-img"
@@ -373,7 +425,7 @@ export default function Dashboard() {
                                   style={{ marginBottom: 12 }}
                                 />
                               </a>
-                            )}
+                            ) : null}
                             <p className="rr-note">
                               {rrTp3 ? "RR ke TP3 = 1:" + rrTp3 + " · " : ""}
                               risiko modal {d.risk_pct}%
@@ -403,8 +455,44 @@ export default function Dashboard() {
                   <div>
                     <div className="section-head">
                       <h2>Screener Bitget</h2>
-                      <span className="count">otomatis</span>
+                      <button
+                        className="btn"
+                        style={{ flex: "none", padding: "5px 12px", fontSize: 12 }}
+                        disabled={scanBusy}
+                        onClick={refreshScreener}
+                      >
+                        {scanBusy ? "Memindai…" : "Scan ulang"}
+                      </button>
                     </div>
+
+                    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                      <input
+                        value={symInput}
+                        onChange={(e) => setSymInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") generateSetup(symInput);
+                        }}
+                        placeholder="Symbol bebas, mis. SOL atau SOLUSDT"
+                        style={{
+                          flex: 1,
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 13,
+                          padding: "8px 12px",
+                          border: "1px solid #E5E7EB",
+                          borderRadius: 8,
+                          outline: "none",
+                        }}
+                      />
+                      <button
+                        className="btn primary"
+                        style={{ flex: "none", padding: "8px 14px", fontSize: 12 }}
+                        disabled={!!genBusy || !symInput.trim()}
+                        onClick={() => generateSetup(symInput)}
+                      >
+                        {genBusy ? "Menganalisa…" : "Buat setup"}
+                      </button>
+                    </div>
+
                     <div className="card">
                       {screener.length === 0 ? (
                         <div className="empty" style={{ border: "none" }}>
@@ -423,7 +511,17 @@ export default function Dashboard() {
                                 {c.reason}
                               </div>
                             </div>
-                            <div className="price mono">{fmt(c.last_price)}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <div className="price mono">{fmt(c.last_price)}</div>
+                              <button
+                                className="btn"
+                                style={{ flex: "none", padding: "4px 10px", fontSize: 11.5 }}
+                                disabled={!!genBusy}
+                                onClick={() => generateSetup(c.symbol)}
+                              >
+                                {genBusy === c.symbol ? "…" : "Buat setup"}
+                              </button>
+                            </div>
                           </div>
                         ))
                       )}
