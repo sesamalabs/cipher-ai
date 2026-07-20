@@ -169,7 +169,7 @@ export default function Dashboard() {
           </svg>
           <span>Dashboard</span>
         </a>
-        <div className="nav-footer">Sesama Labs · v0.3</div>
+        <div className="nav-footer">Sesama Labs · v0.4</div>
       </aside>
 
       <main className="main">
@@ -323,7 +323,7 @@ export default function Dashboard() {
 
                   <div className="section-head">
                     <h2>Histori terakhir</h2>
-                    <span className="count">{history.length} trade</span>
+                    <span className="count">{history.length} trade · klik baris untuk catatan</span>
                   </div>
                   <div className="card">
                     {history.length === 0 ? (
@@ -341,22 +341,72 @@ export default function Dashboard() {
                           </tr>
                         </thead>
                         <tbody>
-                          {history.map((s) => (
-                            <tr key={s.id}>
-                              <td className="pair">{prettySymbol(s.symbol)}</td>
-                              <td className="tf">{s.timeframe}</td>
-                              <td>
-                                <span className={"result " + s.result}>
-                                  {s.result === "win" ? "Win" : "Loss"}
-                                </span>
-                              </td>
-                              <td className="mono">
-                                {s.result === "win" && s.rr_achieved
-                                  ? "1:" + s.rr_achieved
-                                  : "—"}
-                              </td>
-                            </tr>
-                          ))}
+                          {history.map((s) => {
+                            const isOpen = expanded === "h-" + s.id;
+                            return (
+                              <Fragment key={s.id}>
+                                <tr
+                                  className="clickable"
+                                  onClick={() =>
+                                    setExpanded(isOpen ? null : "h-" + s.id)
+                                  }
+                                >
+                                  <td className="pair">{prettySymbol(s.symbol)}</td>
+                                  <td className="tf">{s.timeframe}</td>
+                                  <td>
+                                    <span className={"result " + s.result}>
+                                      {s.result === "win" ? "Win" : "Loss"}
+                                    </span>
+                                  </td>
+                                  <td className="mono">
+                                    {s.result === "win" && s.rr_achieved
+                                      ? "1:" + s.rr_achieved
+                                      : "—"}
+                                  </td>
+                                </tr>
+                                {isOpen && (
+                                  <tr className="detail-row">
+                                    <td colSpan={4}>
+                                      <div className="detail-box">
+                                        <p className="detail-reason">
+                                          {s.reasoning || "Tanpa reasoning"}
+                                        </p>
+                                        <p className="detail-meta">
+                                          Entry {fmt(s.entry)} · SL {fmt(s.stop_loss)} · TP1{" "}
+                                          {fmt(s.tp1)} · TP3 {fmt(s.tp3)}
+                                          {Array.isArray(s.tags) && s.tags.length > 0
+                                            ? " · " + s.tags.join(", ")
+                                            : ""}
+                                        </p>
+                                        {s.review ? (
+                                          <p
+                                            className="detail-reason"
+                                            style={{
+                                              borderLeftColor:
+                                                s.result === "win"
+                                                  ? "#16A34A"
+                                                  : "#DC2626",
+                                              fontWeight: 500,
+                                            }}
+                                          >
+                                            Catatan CIPHER: {s.review}
+                                          </p>
+                                        ) : (
+                                          <p className="detail-meta">
+                                            Catatan CIPHER sedang disusun (otomatis dalam
+                                            beberapa menit setelah trade selesai)
+                                          </p>
+                                        )}
+                                        {s.ohlcv ? (
+                                          <SetupChart ohlcv={s.ohlcv} levels={s} />
+                                        ) : null}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </Fragment>
+                            );
+                          })}
                         </tbody>
                       </table>
                     )}
