@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createAdminClient } from "@/lib/supabaseAdmin";
 import { analyzeSymbol } from "@/lib/analyze";
+import { buildTradingMemory } from "@/lib/memory";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -56,9 +57,17 @@ export async function POST(request) {
     ? body.timeframe
     : "4H";
 
+  // Memori trading historis sebagai konteks analisa
+  let memoryText = "";
+  try {
+    memoryText = await buildTradingMemory();
+  } catch {
+    memoryText = "";
+  }
+
   let result;
   try {
-    result = await analyzeSymbol(symbol, timeframe);
+    result = await analyzeSymbol(symbol, timeframe, memoryText);
   } catch (e) {
     return NextResponse.json(
       { error: "Gagal analisa: " + String(e.message || e).slice(0, 200) },
