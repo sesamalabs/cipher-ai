@@ -169,7 +169,7 @@ export default function Dashboard() {
           </svg>
           <span>Dashboard</span>
         </a>
-        <div className="nav-footer">Sesama Labs · v0.4</div>
+        <div className="nav-footer">Sesama Labs · v0.5</div>
       </aside>
 
       <main className="main">
@@ -226,191 +226,167 @@ export default function Dashboard() {
                 <div>
                   <div className="section-head">
                     <h2>Sinyal aktif</h2>
-                    <span className="count">{active.length} posisi · klik baris untuk detail</span>
+                    <span className="count">{active.length} posisi · ketuk untuk detail</span>
                   </div>
-                  <div className="card table-scroll" style={{ marginBottom: 28 }}>
-                    {active.length === 0 ? (
+
+                  {active.length === 0 ? (
+                    <div className="card" style={{ marginBottom: 28 }}>
                       <div className="empty" style={{ border: "none" }}>
                         Belum ada sinyal aktif
                       </div>
-                    ) : (
-                      <table className="wide">
-                        <thead>
-                          <tr>
-                            <td>Pair</td>
-                            <td>TF</td>
-                            <td>Entry</td>
-                            <td>SL</td>
-                            <td>TP1</td>
-                            <td>TP2</td>
-                            <td>TP3</td>
-                            <td>Harga kini</td>
-                            <td>Status</td>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {active.map((s) => {
-                            const st = STATUS_LABEL[s.status] || STATUS_LABEL.active;
-                            const isOpen = expanded === s.id;
-                            const risk = s.entry - s.stop_loss;
-                            const rrTp3 =
-                              s.tp3 && risk > 0
-                                ? Math.round(((s.tp3 - s.entry) / risk) * 10) / 10
-                                : null;
-                            return (
-                              <Fragment key={s.id}>
-                                <tr
-                                  className="clickable"
-                                  onClick={() => setExpanded(isOpen ? null : s.id)}
-                                >
-                                  <td className="pair">{prettySymbol(s.symbol)}</td>
-                                  <td className="tf">{s.timeframe}</td>
-                                  <td className="mono">{fmt(s.entry)}</td>
-                                  <td className="mono neg">{fmt(s.stop_loss)}</td>
-                                  <td className="mono pos">{fmt(s.tp1)}</td>
-                                  <td className="mono pos">{fmt(s.tp2)}</td>
-                                  <td className="mono pos">{fmt(s.tp3)}</td>
-                                  <td className="mono">{fmt(s.current_price)}</td>
-                                  <td>
-                                    <span className={"badge " + st.cls}>{st.text}</span>
-                                  </td>
-                                </tr>
-                                {isOpen && (
-                                  <tr className="detail-row">
-                                    <td colSpan={9}>
-                                      <div className="detail-box">
-                                        <p className="detail-reason">
-                                          {s.reasoning || "Tanpa reasoning"}
-                                        </p>
-                                        <p className="detail-meta">
-                                          {rrTp3 ? "RR ke TP3 = 1:" + rrTp3 + " · " : ""}
-                                          risiko modal {s.risk_pct}%
-                                          {Array.isArray(s.tags) && s.tags.length > 0
-                                            ? " · " + s.tags.join(", ")
-                                            : ""}
-                                          {s.source === "web" ? " · setup dari web (AI)" : ""}
-                                        </p>
-                                        {s.ohlcv ? (
-                                          <SetupChart ohlcv={s.ohlcv} levels={s} />
-                                        ) : s.chart_url ? (
-                                          <a
-                                            href={s.chart_url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                          >
-                                            <img
-                                              className="chart-img"
-                                              src={s.chart_url}
-                                              alt={"Setup " + prettySymbol(s.symbol)}
-                                            />
-                                          </a>
-                                        ) : (
-                                          <p className="detail-meta">
-                                            Belum ada chart setup untuk sinyal ini
-                                          </p>
-                                        )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )}
-                              </Fragment>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="signal-list" style={{ marginBottom: 28 }}>
+                      {active.map((s) => {
+                        const st = STATUS_LABEL[s.status] || STATUS_LABEL.active;
+                        const isOpen = expanded === s.id;
+                        const risk = s.entry - s.stop_loss;
+                        const rrTp3 =
+                          s.tp3 && risk > 0
+                            ? Math.round(((s.tp3 - s.entry) / risk) * 10) / 10
+                            : null;
+                        return (
+                          <div className="sig-card" key={s.id}>
+                            <div
+                              className="sig-head"
+                              onClick={() => setExpanded(isOpen ? null : s.id)}
+                            >
+                              <div className="sig-title">
+                                <span className="pair">{prettySymbol(s.symbol)}</span>
+                                <span className="tf">{s.timeframe}</span>
+                              </div>
+                              <div className="sig-right">
+                                <span className="sig-nowprice mono">{fmt(s.current_price)}</span>
+                                <span className={"badge " + st.cls}>{st.text}</span>
+                              </div>
+                            </div>
+                            <div className="sig-levels">
+                              <div className="sl-item">
+                                <span className="l">Entry</span>
+                                <span className="v mono">{fmt(s.entry)}</span>
+                              </div>
+                              <div className="sl-item">
+                                <span className="l">SL</span>
+                                <span className="v mono neg">{fmt(s.stop_loss)}</span>
+                              </div>
+                              <div className="sl-item">
+                                <span className="l">TP1</span>
+                                <span className="v mono pos">{fmt(s.tp1)}</span>
+                              </div>
+                              <div className="sl-item">
+                                <span className="l">TP2</span>
+                                <span className="v mono pos">{fmt(s.tp2)}</span>
+                              </div>
+                              <div className="sl-item">
+                                <span className="l">TP3</span>
+                                <span className="v mono pos">{fmt(s.tp3)}</span>
+                              </div>
+                            </div>
+                            {isOpen && (
+                              <div className="sig-detail">
+                                <p className="detail-reason">
+                                  {s.reasoning || "Tanpa reasoning"}
+                                </p>
+                                <p className="detail-meta">
+                                  {rrTp3 ? "RR ke TP3 = 1:" + rrTp3 + " · " : ""}
+                                  risiko modal {s.risk_pct}%
+                                  {Array.isArray(s.tags) && s.tags.length > 0
+                                    ? " · " + s.tags.join(", ")
+                                    : ""}
+                                  {s.source === "web" ? " · setup dari web (AI)" : ""}
+                                </p>
+                                {s.ohlcv ? (
+                                  <SetupChart ohlcv={s.ohlcv} levels={s} />
+                                ) : s.chart_url ? (
+                                  <a href={s.chart_url} target="_blank" rel="noreferrer">
+                                    <img
+                                      className="chart-img"
+                                      src={s.chart_url}
+                                      alt={"Setup " + prettySymbol(s.symbol)}
+                                    />
+                                  </a>
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   <div className="section-head">
                     <h2>Histori terakhir</h2>
-                    <span className="count">{history.length} trade · klik baris untuk catatan</span>
+                    <span className="count">{history.length} trade · ketuk untuk catatan</span>
                   </div>
-                  <div className="card">
-                    {history.length === 0 ? (
+
+                  {history.length === 0 ? (
+                    <div className="card">
                       <div className="empty" style={{ border: "none" }}>
                         Belum ada trade selesai
                       </div>
-                    ) : (
-                      <table>
-                        <thead>
-                          <tr>
-                            <td>Pair</td>
-                            <td>TF</td>
-                            <td>Hasil</td>
-                            <td>RR</td>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {history.map((s) => {
-                            const isOpen = expanded === "h-" + s.id;
-                            return (
-                              <Fragment key={s.id}>
-                                <tr
-                                  className="clickable"
-                                  onClick={() =>
-                                    setExpanded(isOpen ? null : "h-" + s.id)
-                                  }
-                                >
-                                  <td className="pair">{prettySymbol(s.symbol)}</td>
-                                  <td className="tf">{s.timeframe}</td>
-                                  <td>
-                                    <span className={"result " + s.result}>
-                                      {s.result === "win" ? "Win" : "Loss"}
-                                    </span>
-                                  </td>
-                                  <td className="mono">
-                                    {s.result === "win" && s.rr_achieved
-                                      ? "1:" + s.rr_achieved
-                                      : "—"}
-                                  </td>
-                                </tr>
-                                {isOpen && (
-                                  <tr className="detail-row">
-                                    <td colSpan={4}>
-                                      <div className="detail-box">
-                                        <p className="detail-reason">
-                                          {s.reasoning || "Tanpa reasoning"}
-                                        </p>
-                                        <p className="detail-meta">
-                                          Entry {fmt(s.entry)} · SL {fmt(s.stop_loss)} · TP1{" "}
-                                          {fmt(s.tp1)} · TP3 {fmt(s.tp3)}
-                                          {Array.isArray(s.tags) && s.tags.length > 0
-                                            ? " · " + s.tags.join(", ")
-                                            : ""}
-                                        </p>
-                                        {s.review ? (
-                                          <p
-                                            className="detail-reason"
-                                            style={{
-                                              borderLeftColor:
-                                                s.result === "win"
-                                                  ? "#16A34A"
-                                                  : "#DC2626",
-                                              fontWeight: 500,
-                                            }}
-                                          >
-                                            Catatan CIPHER: {s.review}
-                                          </p>
-                                        ) : (
-                                          <p className="detail-meta">
-                                            Catatan CIPHER sedang disusun (otomatis dalam
-                                            beberapa menit setelah trade selesai)
-                                          </p>
-                                        )}
-                                        {s.ohlcv ? (
-                                          <SetupChart ohlcv={s.ohlcv} levels={s} />
-                                        ) : null}
-                                      </div>
-                                    </td>
-                                  </tr>
+                    </div>
+                  ) : (
+                    <div className="signal-list">
+                      {history.map((s) => {
+                        const isOpen = expanded === "h-" + s.id;
+                        return (
+                          <div className="sig-card" key={s.id}>
+                            <div
+                              className="sig-head"
+                              onClick={() => setExpanded(isOpen ? null : "h-" + s.id)}
+                            >
+                              <div className="sig-title">
+                                <span className="pair">{prettySymbol(s.symbol)}</span>
+                                <span className="tf">{s.timeframe}</span>
+                              </div>
+                              <div className="sig-right">
+                                <span className={"result " + s.result}>
+                                  {s.result === "win" ? "Win" : "Loss"}
+                                </span>
+                                <span className="tf mono">
+                                  {s.result === "win" && s.rr_achieved
+                                    ? "1:" + s.rr_achieved
+                                    : "—"}
+                                </span>
+                              </div>
+                            </div>
+                            {isOpen && (
+                              <div className="sig-detail">
+                                <p className="detail-reason">
+                                  {s.reasoning || "Tanpa reasoning"}
+                                </p>
+                                <p className="detail-meta">
+                                  Entry {fmt(s.entry)} · SL {fmt(s.stop_loss)} · TP1{" "}
+                                  {fmt(s.tp1)} · TP3 {fmt(s.tp3)}
+                                  {Array.isArray(s.tags) && s.tags.length > 0
+                                    ? " · " + s.tags.join(", ")
+                                    : ""}
+                                </p>
+                                {s.review ? (
+                                  <p
+                                    className="detail-reason"
+                                    style={{
+                                      borderLeftColor:
+                                        s.result === "win" ? "#16A34A" : "#DC2626",
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    Catatan CIPHER: {s.review}
+                                  </p>
+                                ) : (
+                                  <p className="detail-meta">
+                                    Catatan CIPHER sedang disusun (otomatis beberapa menit
+                                    setelah trade selesai)
+                                  </p>
                                 )}
-                              </Fragment>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
+                                {s.ohlcv ? <SetupChart ohlcv={s.ohlcv} levels={s} /> : null}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div className="rail">
@@ -515,31 +491,23 @@ export default function Dashboard() {
                       </button>
                     </div>
 
-                    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                    <div className="sym-row">
                       <input
+                        className="sym-input"
                         value={symInput}
                         onChange={(e) => setSymInput(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") generateSetup(symInput);
                         }}
-                        placeholder="Symbol bebas, mis. SOL atau SOLUSDT"
-                        style={{
-                          flex: 1,
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 13,
-                          padding: "8px 12px",
-                          border: "1px solid #E5E7EB",
-                          borderRadius: 8,
-                          outline: "none",
-                        }}
+                        placeholder="Symbol bebas, mis. SOL"
                       />
                       <button
                         className="btn primary"
-                        style={{ flex: "none", padding: "8px 14px", fontSize: 12 }}
+                        style={{ flex: "none", padding: "8px 14px", fontSize: 12, whiteSpace: "nowrap" }}
                         disabled={!!genBusy || !symInput.trim()}
                         onClick={() => generateSetup(symInput)}
                       >
-                        {genBusy ? "Menganalisa…" : "Buat setup"}
+                        {genBusy ? "…" : "Buat setup"}
                       </button>
                     </div>
 
@@ -551,7 +519,7 @@ export default function Dashboard() {
                       ) : (
                         screener.map((c) => (
                           <div className="screener-item" key={c.id}>
-                            <div>
+                            <div className="screener-info">
                               <div className="pair">{prettySymbol(c.symbol)}</div>
                               <div
                                 className={
@@ -561,11 +529,11 @@ export default function Dashboard() {
                                 {c.reason}
                               </div>
                             </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div className="screener-act">
                               <div className="price mono">{fmt(c.last_price)}</div>
                               <button
                                 className="btn"
-                                style={{ flex: "none", padding: "4px 10px", fontSize: 11.5 }}
+                                style={{ flex: "none", padding: "4px 10px", fontSize: 11.5, whiteSpace: "nowrap" }}
                                 disabled={!!genBusy}
                                 onClick={() => generateSetup(c.symbol)}
                               >
