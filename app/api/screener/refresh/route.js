@@ -31,6 +31,6 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const candidates = await runScreener();
-  return NextResponse.json({ ok: true, found: candidates.length });
+  const { candidates, source } = await runScreener();
+  return NextResponse.json({ ok: true, found: candidates.length, source });
 }
