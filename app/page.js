@@ -78,8 +78,8 @@ export default function Dashboard() {
         supabase
           .from("screener_results")
           .select("*")
-          .order("quote_volume", { ascending: false })
-          .limit(8),
+          .order("rank", { ascending: true, nullsFirst: false })
+          .limit(10),
       ]);
 
     if (statsRes.data) setStats(statsRes.data);
