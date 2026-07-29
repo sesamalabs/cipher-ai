@@ -35,20 +35,23 @@ export default function LearningPage() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
   const [filter, setFilter] = useState("all"); // all | win | loss
+  const [asset, setAsset] = useState("crypto"); // crypto | gold
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
     const { data } = await supabase
       .from("signals")
       .select("*")
+      .eq("asset_class", asset)
       .not("result", "is", null)
       .order("closed_at", { ascending: false })
       .limit(100);
     if (data) setClosed(data);
     setLoading(false);
-  }, []);
+  }, [asset]);
 
   useEffect(() => {
+    setLoading(true);
     loadData();
     const interval = setInterval(loadData, 60_000);
     return () => clearInterval(interval);
@@ -83,6 +86,16 @@ export default function LearningPage() {
 
   const filtered = closed.filter((s) => (filter === "all" ? true : s.result === filter));
 
+  function filterBtnStyle(isActive) {
+    return {
+      flex: "none",
+      padding: "5px 12px",
+      fontSize: 12,
+      background: isActive ? "#111318" : "#fff",
+      color: isActive ? "#fff" : "#111318",
+    };
+  }
+
   return (
     <div className="app">
       <Sidebar active="learning" />
@@ -102,13 +115,23 @@ export default function LearningPage() {
         </header>
 
         <div className="content">
+          <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
+            <button className="btn" style={filterBtnStyle(asset === "crypto")} onClick={() => setAsset("crypto")}>
+              Crypto
+            </button>
+            <button className="btn" style={filterBtnStyle(asset === "gold")} onClick={() => setAsset("gold")}>
+              Gold XAUUSD
+            </button>
+          </div>
+
           {loading ? (
             <div className="loading">Memuat data…</div>
           ) : total === 0 ? (
             <div className="card">
               <div className="empty" style={{ border: "none" }}>
-                Belum ada trade selesai — belum ada yang bisa dipelajari CIPHER. Begitu
-                sinyal pertama hit TP atau SL, evaluasinya akan muncul di sini.
+                Belum ada trade {asset === "gold" ? "XAUUSD" : "crypto"} selesai — belum ada yang
+                bisa dipelajari CIPHER di sini. Begitu sinyal pertama hit TP atau SL, evaluasinya
+                akan muncul.
               </div>
             </div>
           ) : (
@@ -146,43 +169,13 @@ export default function LearningPage() {
                   <div className="section-head">
                     <h2>Riwayat pembelajaran</h2>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button
-                        className="btn"
-                        style={{
-                          flex: "none",
-                          padding: "5px 12px",
-                          fontSize: 12,
-                          background: filter === "all" ? "#111318" : "#fff",
-                          color: filter === "all" ? "#fff" : "#111318",
-                        }}
-                        onClick={() => setFilter("all")}
-                      >
+                      <button className="btn" style={filterBtnStyle(filter === "all")} onClick={() => setFilter("all")}>
                         Semua
                       </button>
-                      <button
-                        className="btn"
-                        style={{
-                          flex: "none",
-                          padding: "5px 12px",
-                          fontSize: 12,
-                          background: filter === "win" ? "#111318" : "#fff",
-                          color: filter === "win" ? "#fff" : "#111318",
-                        }}
-                        onClick={() => setFilter("win")}
-                      >
+                      <button className="btn" style={filterBtnStyle(filter === "win")} onClick={() => setFilter("win")}>
                         Menang
                       </button>
-                      <button
-                        className="btn"
-                        style={{
-                          flex: "none",
-                          padding: "5px 12px",
-                          fontSize: 12,
-                          background: filter === "loss" ? "#111318" : "#fff",
-                          color: filter === "loss" ? "#fff" : "#111318",
-                        }}
-                        onClick={() => setFilter("loss")}
-                      >
+                      <button className="btn" style={filterBtnStyle(filter === "loss")} onClick={() => setFilter("loss")}>
                         Kalah
                       </button>
                     </div>
@@ -195,7 +188,9 @@ export default function LearningPage() {
                         <div className="sig-card" key={s.id}>
                           <div className="sig-head" onClick={() => setExpanded(isOpen ? null : s.id)}>
                             <div className="sig-title">
-                              <span className="pair">{prettySymbol(s.symbol)}</span>
+                              <span className="pair">
+                                {asset === "gold" ? "XAUUSD" : prettySymbol(s.symbol)}
+                              </span>
                               <span className="tf">{s.timeframe}</span>
                             </div>
                             <div className="sig-right">
@@ -292,12 +287,12 @@ export default function LearningPage() {
 
                   <div className="confirm-card" style={{ border: "1px solid var(--line)" }}>
                     <p className="detail-meta" style={{ margin: 0 }}>
-                      Setiap kali kamu klik <b>Buat setup</b> di Dashboard, CIPHER membaca
-                      winrate keseluruhan, performa per pola di atas, dan pelajaran dari
-                      trade-trade terakhir sebelum menyusun sinyal baru — supaya makin lama
-                      makin terkalibrasi ke hasil trading kamu sendiri, bukan cuma menebak.
-                      Dengan data yang masih sedikit, angka-angka di atas masih bisa berubah
-                      banyak; makin banyak trade selesai, makin bisa dipercaya.
+                      Statistik di atas khusus {asset === "gold" ? "XAUUSD" : "crypto"} — tidak
+                      tercampur dengan aset lain, karena pola dan perilaku pasarnya berbeda. Setiap
+                      kali kamu buat setup baru untuk aset ini, CIPHER membaca winrate, performa
+                      per pola, dan pelajaran dari trade-trade terakhir di atas sebelum menyusun
+                      sinyal baru. Dengan data yang masih sedikit, angka-angka ini masih bisa
+                      berubah banyak; makin banyak trade selesai, makin bisa dipercaya.
                     </p>
                   </div>
                 </div>
