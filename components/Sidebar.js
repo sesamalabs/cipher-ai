@@ -17,6 +17,13 @@ export default function Sidebar({ active }) {
         </svg>
         <span>Dashboard</span>
       </Link>
+      <Link className={"nav-item" + (active === "gold" ? " active" : "")} href="/gold">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.2c0 2.8-6 1.3-6 4.1 0 1.3 1.3 2.2 3 2.2s3-1 3-2.3" />
+        </svg>
+        <span>Gold XAUUSD</span>
+      </Link>
       <Link
         className={"nav-item" + (active === "learning" ? " active" : "")}
         href="/learning"
@@ -27,7 +34,7 @@ export default function Sidebar({ active }) {
         </svg>
         <span>Pembelajaran</span>
       </Link>
-      <div className="nav-footer">Sesama Labs · v0.7</div>
+      <div className="nav-footer">Sesama Labs · v1.0</div>
     </aside>
   );
 }
