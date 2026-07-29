@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
 import SetupChart from "@/components/SetupChart";
+import Sidebar from "@/components/Sidebar";
 
 const STATUS_LABEL = {
   active: { text: "Berjalan", cls: "pending" },
@@ -192,21 +193,7 @@ export default function Dashboard() {
 
   return (
     <div className="app">
-      <aside className="sidebar">
-        <div className="logo">
-          CIPHER<span>.</span>
-        </div>
-        <a className="nav-item active" href="#">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="9" rx="1" />
-            <rect x="14" y="3" width="7" height="5" rx="1" />
-            <rect x="14" y="12" width="7" height="9" rx="1" />
-            <rect x="3" y="16" width="7" height="5" rx="1" />
-          </svg>
-          <span>Dashboard</span>
-        </a>
-        <div className="nav-footer">Sesama Labs · v0.6</div>
-      </aside>
+      <Sidebar active="dashboard" />
 
       <main className="main">
         <header className="topbar">
