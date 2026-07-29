@@ -62,16 +62,19 @@ export default function Dashboard() {
         supabase
           .from("signals")
           .select("*")
+          .eq("asset_class", "crypto")
           .eq("status", "draft")
           .order("created_at", { ascending: false }),
         supabase
           .from("signals")
           .select("*")
+          .eq("asset_class", "crypto")
           .in("status", ["active", "tp1", "tp2"])
           .order("created_at", { ascending: false }),
         supabase
           .from("signals")
           .select("*")
+          .eq("asset_class", "crypto")
           .not("result", "is", null)
           .order("closed_at", { ascending: false })
           .limit(10),
