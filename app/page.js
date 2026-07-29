@@ -25,6 +25,17 @@ function prettySymbol(s) {
   return s.replace("USDT", "/USDT");
 }
 
+function timeAgo(iso) {
+  if (!iso) return null;
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "baru saja";
+  if (mins < 60) return mins + " menit lalu";
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + " jam lalu";
+  return Math.floor(hrs / 24) + " hari lalu";
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const [stats, setStats] = useState(null);
@@ -39,6 +50,7 @@ export default function Dashboard() {
   const [scanBusy, setScanBusy] = useState(false);
   const [genBusy, setGenBusy] = useState(null);
   const [symInput, setSymInput] = useState("");
+  const [priceBusy, setPriceBusy] = useState(false);
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
@@ -108,6 +120,24 @@ export default function Dashboard() {
     loadData();
   }
 
+  async function refreshPrices() {
+    setPriceBusy(true);
+    try {
+      const res = await fetch("/api/signals/refresh-prices", { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal ambil harga");
+      showToast(
+        json.checked === 0
+          ? "Tidak ada sinyal aktif untuk dicek"
+          : "Harga diperbarui — " + json.checked + " sinyal dicek"
+      );
+      loadData();
+    } catch (e) {
+      showToast("Gagal update harga: " + e.message);
+    }
+    setPriceBusy(false);
+  }
+
   async function refreshScreener() {
     setScanBusy(true);
     try {
@@ -154,6 +184,12 @@ export default function Dashboard() {
     router.refresh();
   }
 
+  const lastChecked = active.reduce((latest, s) => {
+    if (!s.last_checked_at) return latest;
+    if (!latest || new Date(s.last_checked_at) > new Date(latest)) return s.last_checked_at;
+    return latest;
+  }, null);
+
   return (
     <div className="app">
       <aside className="sidebar">
@@ -169,7 +205,7 @@ export default function Dashboard() {
           </svg>
           <span>Dashboard</span>
         </a>
-        <div className="nav-footer">Sesama Labs · v0.5</div>
+        <div className="nav-footer">Sesama Labs · v0.6</div>
       </aside>
 
       <main className="main">
@@ -226,7 +262,21 @@ export default function Dashboard() {
                 <div>
                   <div className="section-head">
                     <h2>Sinyal aktif</h2>
-                    <span className="count">{active.length} posisi · ketuk untuk detail</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span className="count">
+                        {active.length > 0
+                          ? "update " + (timeAgo(lastChecked) || "—")
+                          : active.length + " posisi"}
+                      </span>
+                      <button
+                        className="btn"
+                        style={{ flex: "none", padding: "5px 12px", fontSize: 12, whiteSpace: "nowrap" }}
+                        disabled={priceBusy}
+                        onClick={refreshPrices}
+                      >
+                        {priceBusy ? "Mengambil…" : "Refresh harga"}
+                      </button>
+                    </div>
                   </div>
 
                   {active.length === 0 ? (
@@ -294,6 +344,9 @@ export default function Dashboard() {
                                     ? " · " + s.tags.join(", ")
                                     : ""}
                                   {s.source === "web" ? " · setup dari web (AI)" : ""}
+                                  {s.last_checked_at
+                                    ? " · harga dicek " + timeAgo(s.last_checked_at)
+                                    : " · harga belum pernah dicek"}
                                 </p>
                                 {s.ohlcv ? (
                                   <SetupChart ohlcv={s.ohlcv} levels={s} />
