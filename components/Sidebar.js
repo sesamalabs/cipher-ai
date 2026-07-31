@@ -34,7 +34,7 @@ export default function Sidebar({ active }) {
         </svg>
         <span>Pembelajaran</span>
       </Link>
-      <div className="nav-footer">Sesama Labs · v1.0</div>
+      <div className="nav-footer">Sesama Labs · v1.1</div>
     </aside>
   );
 }
